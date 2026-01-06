@@ -1,6 +1,7 @@
 {
-  "name": "blog-backend",
-  "version": "1.0.0",
+  "name": "naver-blog-ranking-server",
+  "version": "2.0.0",
+  "description": "블로그 & 키워드광고 통합 관리 시스템 - MongoDB",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -8,6 +9,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.6.0",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "mongoose": "^8.0.0"
   }
 }
