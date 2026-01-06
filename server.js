@@ -99,11 +99,11 @@ app.post('/api/generate-blog', async (req, res) => {
     console.log(`🔑 API 키 확인: ${GEMINI_API_KEY.substring(0, 10)}...`);
     
     try {
-        // Gemini API 엔드포인트 - 안정적인 모델명 사용
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+        // Gemini API 엔드포인트 - v1 API + gemini-1.5-flash 사용
+        const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
         
         console.log(`🌐 API 호출 중...`);
-        console.log(`🔗 URL: https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`);
+        console.log(`🔗 URL: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`);
         
         const response = await axios.post(
             apiUrl,
