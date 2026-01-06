@@ -86,17 +86,26 @@ app.post('/api/naver-ad-rank', async (req, res) => {
 app.post('/api/generate-blog', async (req, res) => {
     const { prompt } = req.body;
     console.log(`✍️ 블로그 생성 요청 (Gemini)`);
+    console.log(`📝 프롬프트 길이: ${prompt?.length || 0} 글자`);
     
     if (!GEMINI_API_KEY) {
+        console.log('⚠️ GEMINI_API_KEY가 설정되지 않았습니다.');
         return res.status(503).json({ 
             error: 'Gemini API 키가 설정되지 않았습니다.',
             message: '블로그 자동 생성 기능을 사용하려면 환경 변수 GEMINI_API_KEY를 설정하세요.'
         });
     }
     
+    console.log(`🔑 API 키 확인: ${GEMINI_API_KEY.substring(0, 10)}...`);
+    
     try {
+        // Gemini API 엔드포인트 수정 (올바른 버전)
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        
+        console.log(`🌐 API 호출 중...`);
+        
         const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+            apiUrl,
             {
                 contents: [
                     {
@@ -109,14 +118,18 @@ app.post('/api/generate-blog', async (req, res) => {
             {
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                timeout: 60000 // 60초 타임아웃
             }
         );
         
         console.log(`✅ 블로그 생성 성공 (Gemini)`);
+        console.log(`📊 응답 상태: ${response.status}`);
         
         // Gemini 응답 형식 변환
         const generatedText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        
+        console.log(`📝 생성된 텍스트 길이: ${generatedText.length} 글자`);
         
         res.json({
             content: [
@@ -128,9 +141,14 @@ app.post('/api/generate-blog', async (req, res) => {
         
     } catch (error) {
         console.error('❌ Gemini API 오류:', error.message);
+        console.error('❌ 오류 상세:', error.response?.data || error);
+        
+        // 더 자세한 오류 정보 반환
         res.status(500).json({ 
             error: error.message,
-            details: error.response?.data 
+            details: error.response?.data,
+            status: error.response?.status,
+            statusText: error.response?.statusText
         });
     }
 });
