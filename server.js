@@ -101,6 +101,21 @@ settingsSchema.index({ brand: 1, type: 1, settingKey: 1 }, { unique: true });
 
 const Settings = mongoose.model('Settings', settingsSchema);
 
+// ============ 루트 경로 ============
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Blog & Keyword Ad Management System Backend',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            health: '/api/health',
+            keywords: '/api/keywords/:brand/:type',
+            aiData: '/api/ai-data/:brand/:type',
+            blogAccounts: '/api/blog-accounts/:brand'
+        }
+    });
+});
+
 // ============ 헬스 체크 ============
 app.get('/api/health', async (req, res) => {
     let dbStatus = 'disconnected';
@@ -584,11 +599,14 @@ app.post('/api/generate-blog', async (req, res) => {
 // ============ 서버 시작 ============
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
     console.log('');
     console.log('🚀 블로그 & 키워드광고 통합 관리 시스템 백엔드 서버 실행 중');
-    console.log(`📍 주소: http://localhost:${PORT}`);
-    console.log(`📊 상태: http://localhost:${PORT}/api/health`);
+    console.log(`📍 포트: ${PORT}`);
+    console.log(`📍 호스트: ${HOST} (모든 네트워크 인터페이스)`);
+    console.log(`📊 헬스 체크: /api/health`);
     console.log('✅ 준비 완료!');
     console.log('');
 });
