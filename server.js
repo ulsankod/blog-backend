@@ -20,22 +20,10 @@ const NAVER_CLIENT_SECRET = 'KlUMVwzIuI';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 // ============ MongoDB 연결 설정 ============
-const MONGODB_URI = process.env.MONGODB_URI;
-
-// 환경 변수 체크 - 없으면 서버 종료
-if (!MONGODB_URI) {
-    console.error('');
-    console.error('❌❌❌ MONGODB_URI 환경 변수가 설정되지 않았습니다!');
-    console.error('Railway Variables 탭에서 MONGODB_URI를 설정해주세요.');
-    console.error('');
-    console.error('현재 환경 변수 목록:');
-    console.error(Object.keys(process.env).filter(k => k.includes('MONGO')));
-    console.error('');
-    process.exit(1);
-}
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:KBoMSfiusoYJOefgXuhCQCbAKnazqLDu@mongodb.railway.internal:27017';
 
 console.log('');
-console.log('✅ MONGODB_URI 환경 변수 확인됨');
+console.log('✅ MongoDB URI 설정됨');
 console.log('📍 연결 주소:', MONGODB_URI.substring(0, 30) + '...');
 console.log('');
 
