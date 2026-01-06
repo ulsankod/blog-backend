@@ -33,6 +33,46 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Gemini 사용 가능한 모델 목록 조회
+app.get('/api/gemini-models', async (req, res) => {
+    if (!GEMINI_API_KEY) {
+        return res.status(503).json({ 
+            error: 'Gemini API 키가 설정되지 않았습니다.'
+        });
+    }
+    
+    try {
+        const response = await axios.get(
+            `https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}`
+        );
+        
+        console.log(`✅ 모델 목록 조회 성공`);
+        
+        // generateContent를 지원하는 모델만 필터링
+        const models = response.data.models || [];
+        const supportedModels = models.filter(model => 
+            model.supportedGenerationMethods?.includes('generateContent')
+        );
+        
+        res.json({
+            total: models.length,
+            supported: supportedModels.length,
+            models: supportedModels.map(m => ({
+                name: m.name,
+                displayName: m.displayName,
+                description: m.description
+            }))
+        });
+        
+    } catch (error) {
+        console.error('❌ 모델 목록 조회 오류:', error.message);
+        res.status(500).json({ 
+            error: error.message,
+            details: error.response?.data 
+        });
+    }
+});
+
 // 네이버 블로그 검색
 app.post('/api/naver-search', async (req, res) => {
     const { query } = req.body;
@@ -98,60 +138,83 @@ app.post('/api/generate-blog', async (req, res) => {
     
     console.log(`🔑 API 키 확인: ${GEMINI_API_KEY.substring(0, 10)}...`);
     
-    try {
-        // Gemini API 엔드포인트 - v1 API + gemini-1.5-flash 사용
-        const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-        
-        console.log(`🌐 API 호출 중...`);
-        console.log(`🔗 URL: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent`);
-        
-        const response = await axios.post(
-            apiUrl,
-            {
-                contents: [
-                    {
-                        parts: [
-                            { text: prompt }
-                        ]
-                    }
-                ]
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                timeout: 60000 // 60초 타임아웃
-            }
-        );
-        
-        console.log(`✅ 블로그 생성 성공 (Gemini)`);
-        console.log(`📊 응답 상태: ${response.status}`);
-        
-        // Gemini 응답 형식 변환
-        const generatedText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        
-        console.log(`📝 생성된 텍스트 길이: ${generatedText.length} 글자`);
-        
-        res.json({
-            content: [
+    // 시도할 모델 목록 (우선순위 순)
+    const modelsToTry = [
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-pro',
+        'gemini-1.0-pro'
+    ];
+    
+    let lastError = null;
+    
+    for (const modelName of modelsToTry) {
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
+            
+            console.log(`🌐 API 호출 시도: ${modelName}`);
+            
+            const response = await axios.post(
+                apiUrl,
                 {
-                    text: generatedText
+                    contents: [
+                        {
+                            parts: [
+                                { text: prompt }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 60000 // 60초 타임아웃
                 }
-            ]
-        });
-        
-    } catch (error) {
-        console.error('❌ Gemini API 오류:', error.message);
-        console.error('❌ 오류 상세:', error.response?.data || error);
-        
-        // 더 자세한 오류 정보 반환
-        res.status(500).json({ 
-            error: error.message,
-            details: error.response?.data,
-            status: error.response?.status,
-            statusText: error.response?.statusText
-        });
+            );
+            
+            console.log(`✅ 블로그 생성 성공 (${modelName})`);
+            console.log(`📊 응답 상태: ${response.status}`);
+            
+            // Gemini 응답 형식 변환
+            const generatedText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            
+            console.log(`📝 생성된 텍스트 길이: ${generatedText.length} 글자`);
+            
+            return res.json({
+                content: [
+                    {
+                        text: generatedText
+                    }
+                ],
+                model: modelName
+            });
+            
+        } catch (error) {
+            console.log(`❌ ${modelName} 실패: ${error.message}`);
+            lastError = error;
+            
+            // 404가 아닌 다른 오류면 즉시 중단
+            if (error.response?.status !== 404) {
+                break;
+            }
+            
+            // 다음 모델 시도
+            continue;
+        }
     }
+    
+    // 모든 모델이 실패한 경우
+    console.error('❌ 모든 Gemini 모델 시도 실패');
+    console.error('❌ 마지막 오류:', lastError?.response?.data || lastError?.message);
+    
+    res.status(500).json({ 
+        error: lastError?.message || 'Gemini API 호출 실패',
+        details: lastError?.response?.data,
+        status: lastError?.response?.status,
+        statusText: lastError?.response?.statusText,
+        triedModels: modelsToTry
+    });
 });
 
 const PORT = process.env.PORT || 3000;
