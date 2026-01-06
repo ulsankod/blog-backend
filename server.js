@@ -138,12 +138,13 @@ app.post('/api/generate-blog', async (req, res) => {
     
     console.log(`🔑 API 키 확인: ${GEMINI_API_KEY.substring(0, 10)}...`);
     
-    // 시도할 모델 목록 (우선순위 순)
+    // 시도할 모델 목록 (우선순위 순 - 2025년 최신 모델)
     const modelsToTry = [
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'gemini-pro',
-        'gemini-1.0-pro'
+        'gemini-2.5-flash',      // 최신! (2025년 6월)
+        'gemini-2.0-flash',      // 빠름! (2025년 1월)
+        'gemini-2.5-pro',        // 최고 성능!
+        'gemini-2.0-flash-001',  // 안정 버전
+        'gemini-2.5-flash-lite'  // 가벼운 버전
     ];
     
     let lastError = null;
