@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-// CORS 설정 - 모든 도메인 허용
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -17,8 +16,6 @@ app.use(express.json({ limit: '10mb' }));
 const NAVER_CLIENT_ID = 'vvMjRTRRDIui74yDknsx';
 const NAVER_CLIENT_SECRET = 'KlUMVwzIuI';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-
-// MongoDB 연결
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/jenfix_blog_system';
 
 mongoose.connect(MONGODB_URI, {
@@ -28,7 +25,6 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('✅ MongoDB 연결 성공'))
 .catch(err => console.error('❌ MongoDB 연결 실패:', err));
 
-// MongoDB 스키마
 const KeywordSchema = new mongoose.Schema({
     brand: { type: String, required: true, default: 'jenfix' },
     type: { type: String, required: true, default: 'blog' },
@@ -65,7 +61,6 @@ const Keyword = mongoose.model('Keyword', KeywordSchema);
 const AIData = mongoose.model('AIData', AIDataSchema);
 const BlogAccount = mongoose.model('BlogAccount', BlogAccountSchema);
 
-// 헬스 체크
 app.get('/api/health', async (req, res) => {
     const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
     res.json({ 
@@ -81,7 +76,6 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
-// 키워드 목록 조회
 app.get('/api/keywords/:brand/:type', async (req, res) => {
     try {
         const { brand, type } = req.params;
@@ -94,7 +88,6 @@ app.get('/api/keywords/:brand/:type', async (req, res) => {
     }
 });
 
-// 키워드 추가
 app.post('/api/keywords', async (req, res) => {
     try {
         const { brand = 'jenfix', type = 'blog', category, keyword } = req.body;
@@ -114,7 +107,6 @@ app.post('/api/keywords', async (req, res) => {
     }
 });
 
-// 키워드 순위 업데이트
 app.put('/api/keywords/:brand/:type/update', async (req, res) => {
     try {
         const { brand, type } = req.params;
@@ -139,7 +131,6 @@ app.put('/api/keywords/:brand/:type/update', async (req, res) => {
     }
 });
 
-// 키워드 삭제
 app.delete('/api/keywords/:brand/:type/:category/:keyword', async (req, res) => {
     try {
         const { brand, type, category, keyword } = req.params;
@@ -155,7 +146,6 @@ app.delete('/api/keywords/:brand/:type/:category/:keyword', async (req, res) => 
     }
 });
 
-// 키워드 일괄 업로드
 app.post('/api/keywords/bulk', async (req, res) => {
     try {
         const { brand = 'jenfix', type = 'blog', keywords } = req.body;
@@ -186,7 +176,6 @@ app.post('/api/keywords/bulk', async (req, res) => {
     }
 });
 
-// AI 데이터 저장
 app.post('/api/ai-data', async (req, res) => {
     try {
         const { brand = 'jenfix', type = 'blog', category, keyword, corporateRank, turtleRank } = req.body;
@@ -199,7 +188,6 @@ app.post('/api/ai-data', async (req, res) => {
     }
 });
 
-// AI 데이터 조회
 app.get('/api/ai-data/:brand/:type', async (req, res) => {
     try {
         const { brand, type } = req.params;
@@ -212,7 +200,6 @@ app.get('/api/ai-data/:brand/:type', async (req, res) => {
     }
 });
 
-// 블로그 계정 저장
 app.post('/api/blog-accounts', async (req, res) => {
     try {
         const { brand = 'jenfix', accounts } = req.body;
@@ -237,7 +224,6 @@ app.post('/api/blog-accounts', async (req, res) => {
     }
 });
 
-// 블로그 계정 조회
 app.get('/api/blog-accounts/:brand', async (req, res) => {
     try {
         const { brand } = req.params;
@@ -252,7 +238,6 @@ app.get('/api/blog-accounts/:brand', async (req, res) => {
     }
 });
 
-// 마이그레이션
 app.post('/api/migrate', async (req, res) => {
     try {
         const { keywords, finalData, accounts } = req.body;
@@ -302,7 +287,6 @@ app.post('/api/migrate', async (req, res) => {
     }
 });
 
-// 전체 데이터 동기화
 app.get('/api/sync/all/:brand/:type', async (req, res) => {
     try {
         const { brand, type } = req.params;
@@ -319,7 +303,6 @@ app.get('/api/sync/all/:brand/:type', async (req, res) => {
     }
 });
 
-// 네이버 블로그 검색
 app.post('/api/naver-search', async (req, res) => {
     const { query } = req.body;
     if (!query) {
@@ -341,7 +324,6 @@ app.post('/api/naver-search', async (req, res) => {
     }
 });
 
-// 네이버 광고 순위 조회 (시뮬레이션)
 app.post('/api/naver-ad-rank', async (req, res) => {
     const { keyword } = req.body;
     if (!keyword) {
@@ -356,7 +338,6 @@ app.post('/api/naver-ad-rank', async (req, res) => {
     res.json(mockRank);
 });
 
-// Gemini 블로그 글 생성
 app.post('/api/generate-blog', async (req, res) => {
     if (!GEMINI_API_KEY) {
         return res.status(503).json({ error: 'Gemini API 키가 설정되지 않았습니다.' });
